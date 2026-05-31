@@ -62,3 +62,13 @@ python ingest.py
 ## Architecture
 See docs/DESIGN.md for full architecture overview.
 See docs/CHOICES.md for engineering decision rationale.
+## Live Dashboard
+
+Run the terminal dashboard while API is running:
+
+```bash
+python dashboard.py
+```
+
+Shows real-time: unique visitors, conversion rate, zone dwell, funnel, anomalies.
+Updates every 2 seconds.
