@@ -1,0 +1,10 @@
+﻿__pycache__/
+*.pyc
+*.pyo
+data/
+events/
+*.db
+.env
+yolov8n.pt
+dataset/
+runs/
