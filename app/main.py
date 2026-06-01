@@ -24,7 +24,11 @@ app = FastAPI()
 async def startup_event() -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     await init_db()
-    await load_pos_transactions(str(POS_CSV_PATH))
+
+    if POS_CSV_PATH.exists():
+        await load_pos_transactions(str(POS_CSV_PATH))
+    else:
+        print(f"POS CSV not found: {POS_CSV_PATH}")
 
 
 @app.middleware("http")
