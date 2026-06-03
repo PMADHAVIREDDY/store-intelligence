@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Annotated, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class EventType(str, Enum):
@@ -31,20 +31,54 @@ class StoreEvent(BaseModel):
     event_id: str
     store_id: str
     camera_id: str
-    visitor_id: str
+    visitor_id: Optional[str] = None
     event_type: EventType
-    timestamp: datetime
+    timestamp: Optional[datetime] = None
     zone_id: Optional[str] = None
     dwell_ms: int = 0
     is_staff: bool = False
-    confidence: float
+    confidence: float = 0.9
+    metadata: EventMetadata = EventMetadata()
     id_token: Optional[str] = None
     store_code: Optional[str] = None
     event_timestamp: Optional[str] = None
     zone_name: Optional[str] = None
     group_id: Optional[str] = None
     group_size: Optional[int] = None
-    metadata: EventMetadata
+
+    @field_validator('event_type', mode='before')
+    @classmethod
+    def normalize_event_type(cls, v):
+        mapping = {
+            'ENTRY': 'entry',
+            'EXIT': 'exit',
+            'ZONE_ENTER': 'zone_entered',
+            'ZONE_EXIT': 'zone_exited',
+            'ZONE_DWELL': 'zone_dwell',
+            'BILLING_QUEUE_JOIN': 'queue_join',
+            'BILLING_QUEUE_ABANDON': 'queue_abandoned',
+            'REENTRY': 'reentry',
+        }
+        if isinstance(v, str):
+            return mapping.get(v.upper(), v.lower())
+        return v
+
+    @model_validator(mode='after')
+    def fill_missing_fields(self):
+        if self.visitor_id is None and self.id_token is not None:
+            self.visitor_id = self.id_token
+        if self.visitor_id is None:
+            self.visitor_id = f"VIS_{self.event_id[:8]}"
+        if self.timestamp is None and self.event_timestamp is not None:
+            try:
+                self.timestamp = datetime.fromisoformat(
+                    self.event_timestamp.replace('Z', '+00:00')
+                )
+            except:
+                self.timestamp = datetime.utcnow()
+        if self.timestamp is None:
+            self.timestamp = datetime.utcnow()
+        return self
 
 
 class IngestRequest(BaseModel):

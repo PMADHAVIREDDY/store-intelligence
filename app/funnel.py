@@ -10,21 +10,21 @@ async def get_funnel(store_id: str):
     async with get_db() as db:
 
         cursor = await db.execute(
-            "SELECT COUNT(DISTINCT visitor_id) FROM events WHERE store_id=? AND event_type='ENTRY' AND is_staff=0",
+            "SELECT COUNT(DISTINCT visitor_id) FROM events WHERE store_id=? AND UPPER(event_type)='ENTRY' AND is_staff=0",
             (store_id,)
         )
         row = await cursor.fetchone()
         stage1 = row[0] if row and row[0] else 0
 
         cursor = await db.execute(
-            "SELECT COUNT(DISTINCT visitor_id) FROM events WHERE store_id=? AND event_type='ZONE_ENTER' AND is_staff=0",
+            "SELECT COUNT(DISTINCT visitor_id) FROM events WHERE store_id=? AND UPPER(event_type) IN ('ZONE_ENTER','ZONE_ENTERED') AND is_staff=0",
             (store_id,)
         )
         row = await cursor.fetchone()
         stage2 = row[0] if row and row[0] else 0
 
         cursor = await db.execute(
-            "SELECT COUNT(DISTINCT visitor_id) FROM events WHERE store_id=? AND event_type='BILLING_QUEUE_JOIN' AND is_staff=0",
+            "SELECT COUNT(DISTINCT visitor_id) FROM events WHERE store_id=? AND UPPER(event_type) IN ('BILLING_QUEUE_JOIN','QUEUE_JOIN') AND is_staff=0",
             (store_id,)
         )
         row = await cursor.fetchone()

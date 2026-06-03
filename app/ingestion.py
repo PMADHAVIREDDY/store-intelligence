@@ -91,7 +91,7 @@ async def ingest_events(request: Request):
                         event.event_id,
                         event.store_id,
                         event.camera_id,
-                        event.visitor_id,
+                        event.visitor_id or event.id_token or f"VIS_{event.event_id[:8]}",
                         event.event_type.value,
                         event.timestamp.isoformat(),
                         event.zone_id,
@@ -120,7 +120,7 @@ async def ingest_events(request: Request):
                         (
                             str(uuid4()),
                             event.store_id,
-                            event.visitor_id,
+                            event.visitor_id or event.id_token or f"VIS_{event.event_id[:8]}",
                             event.timestamp.isoformat(),
                             0,
                             0,
@@ -133,7 +133,7 @@ async def ingest_events(request: Request):
                         SET exit_time = ?
                         WHERE visitor_id = ? AND exit_time IS NULL
                         """,
-                        (event.timestamp.isoformat(), event.visitor_id),
+                        (event.timestamp.isoformat(), event.visitor_id or event.id_token or f"VIS_{event.event_id[:8]}"),
                     )
                 elif event.event_type in [EventType.REENTRY, "reentry", "REENTRY"]:
                     await db.execute(
@@ -148,7 +148,7 @@ async def ingest_events(request: Request):
                             LIMIT 1
                         )
                         """,
-                        (event.visitor_id,),
+                        (event.visitor_id or event.id_token or f"VIS_{event.event_id[:8]}",),
                     )
                 elif event.event_type in [EventType.BILLING_QUEUE_JOIN, "queue_join", "QUEUE_JOIN"]:
                     window_end = (event.timestamp + timedelta(minutes=5)).isoformat()
@@ -171,7 +171,7 @@ async def ingest_events(request: Request):
                             SET is_converted = 1
                             WHERE visitor_id = ?
                             """,
-                            (event.visitor_id,),
+                            (event.visitor_id or event.id_token or f"VIS_{event.event_id[:8]}",),
                         )
 
                 accepted += 1
