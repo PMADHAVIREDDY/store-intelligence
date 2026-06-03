@@ -2,7 +2,7 @@ import csv
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
-
+import os
 import aiosqlite
 
 DB_PATH = Path(__file__).resolve().parent.parent / "data" / "store_intel.db"
@@ -83,40 +83,32 @@ def _build_iso_timestamp(invoice_date: str, invoice_time: str) -> str:
         return iso_value
 
 
-async def load_pos_transactions(csv_path: str) -> None:
-    path = Path(csv_path)
-    async with get_db() as db:
-        await db.execute("BEGIN")
-        with path.open(newline="", encoding="utf-8") as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                order_id = row.get("order_id")
-                invoice_date = row.get("invoice_date", "")
-                invoice_time = row.get("invoice_time", "")
-                total_amount = row.get("total_amount")
-
-                if not order_id:
-                    continue
-
+async def load_pos_transactions(csv_path):
+    import pandas as pd
+    if not os.path.exists(csv_path):
+        print(f"POS file not found: {csv_path}")
+        return
+    try:
+        df = pd.read_csv(csv_path)
+        async with aiosqlite.connect(DB_PATH) as db:
+            count = 0
+            for _, row in df.iterrows():
                 try:
-                    timestamp = _build_iso_timestamp(invoice_date, invoice_time)
-                except ValueError:
-                    continue
-
-                try:
-                    basket_value_inr = float(total_amount)
-                except (TypeError, ValueError):
-                    continue
-
-                await db.execute(
-                    """
-                    INSERT OR IGNORE INTO pos_transactions (
-                        transaction_id,
-                        store_id,
-                        timestamp,
-                        basket_value_inr
-                    ) VALUES (?, ?, ?, ?)
-                    """,
-                    (order_id, "STORE_BRIGADE_ROAD", timestamp, basket_value_inr),
-                )
-        await db.commit()
+                    date_parts = str(row['order_date']).split('-')
+                    timestamp = f"2026-{date_parts[1]}-{date_parts[0]}T{row['order_time']}Z"
+                    await db.execute(
+                        """INSERT OR IGNORE INTO pos_transactions
+                           (transaction_id, store_id, timestamp, basket_value_inr)
+                           VALUES (?, ?, ?, ?)""",
+                        (str(row['order_id']),
+                         str(row['store_id']),
+                         timestamp,
+                         float(row['total_amount']))
+                    )
+                    count += 1
+                except Exception as e:
+                    print(f"Skipping POS row: {e}")
+            await db.commit()
+            print(f"POS transactions loaded: {count}")
+    except Exception as e:
+        print(f"Error loading POS: {e}")

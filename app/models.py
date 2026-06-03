@@ -6,14 +6,19 @@ from pydantic import BaseModel, Field
 
 
 class EventType(str, Enum):
-    ENTRY = "ENTRY"
-    EXIT = "EXIT"
-    ZONE_ENTER = "ZONE_ENTER"
-    ZONE_EXIT = "ZONE_EXIT"
-    ZONE_DWELL = "ZONE_DWELL"
-    BILLING_QUEUE_JOIN = "BILLING_QUEUE_JOIN"
-    BILLING_QUEUE_ABANDON = "BILLING_QUEUE_ABANDON"
-    REENTRY = "REENTRY"
+    ENTRY = "entry"
+    EXIT = "exit"
+    ZONE_ENTERED = "zone_entered"
+    ZONE_EXITED = "zone_exited"
+    ZONE_DWELL = "zone_dwell"
+    QUEUE_JOIN = "queue_join"
+    QUEUE_ABANDONED = "queue_abandoned"
+    REENTRY = "reentry"
+     # Keep old names as aliases
+    BILLING_QUEUE_JOIN = "queue_join"
+    BILLING_QUEUE_ABANDON = "queue_abandoned"
+    ZONE_ENTER = "zone_entered"
+    ZONE_EXIT = "zone_exited"
 
 
 class EventMetadata(BaseModel):
@@ -33,6 +38,12 @@ class StoreEvent(BaseModel):
     dwell_ms: int = 0
     is_staff: bool = False
     confidence: float
+    id_token: Optional[str] = None
+    store_code: Optional[str] = None
+    event_timestamp: Optional[str] = None
+    zone_name: Optional[str] = None
+    group_id: Optional[str] = None
+    group_size: Optional[int] = None
     metadata: EventMetadata
 
 

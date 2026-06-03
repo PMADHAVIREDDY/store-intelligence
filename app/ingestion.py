@@ -105,7 +105,7 @@ async def ingest_events(request: Request):
                     ),
                 )
 
-                if event.event_type == EventType.ENTRY:
+                if event.event_type in [EventType.ENTRY, "entry", "ENTRY"]:
                     await db.execute(
                         """
                         INSERT OR IGNORE INTO sessions (
@@ -126,7 +126,7 @@ async def ingest_events(request: Request):
                             0,
                         ),
                     )
-                elif event.event_type == EventType.EXIT:
+                elif event.event_type in [EventType.EXIT, "exit", "EXIT"]:
                     await db.execute(
                         """
                         UPDATE sessions
@@ -135,7 +135,7 @@ async def ingest_events(request: Request):
                         """,
                         (event.timestamp.isoformat(), event.visitor_id),
                     )
-                elif event.event_type == EventType.REENTRY:
+                elif event.event_type in [EventType.REENTRY, "reentry", "REENTRY"]:
                     await db.execute(
                         """
                         UPDATE sessions
@@ -150,7 +150,7 @@ async def ingest_events(request: Request):
                         """,
                         (event.visitor_id,),
                     )
-                elif event.event_type == EventType.BILLING_QUEUE_JOIN:
+                elif event.event_type in [EventType.BILLING_QUEUE_JOIN, "queue_join", "QUEUE_JOIN"]:
                     window_end = (event.timestamp + timedelta(minutes=5)).isoformat()
                     cursor = await db.execute(
                         """
