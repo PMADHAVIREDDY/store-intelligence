@@ -1,7 +1,8 @@
 ﻿dataset/
 *.mp4
 data/
-events/
+events/*.jsonl
+!events/all_events.jsonl
 __pycache__/
 *.pyc
 *.db
